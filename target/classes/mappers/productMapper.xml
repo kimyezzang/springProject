@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="spring.mvc.pj_mine.dao.ProductDAO">	<!-- namespace="패키지명.인터페이스" -->
+ 
+ <!-- 관리자 상품관리  -->
+ <!-- 상품 리스트 -->	
+  	<select id="mProductList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.ProductDTO">
+       <![CDATA[	
+       SELECT * 
+	   FROM ( 
+	   SELECT A.* , rownum as rn 
+	   FROM (
+	   SELECT pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate 
+	   FROM mvc_product_tbl 
+	   ORDER BY pdNo DESC
+	   ) A 
+	   ) 
+	   WHERE rn >= #{start} AND rn <= #{end} 
+	   ]]>
+    </select>
+ 
+ <!-- 상품 갯수 -->
+ <select id="mProductCnt" parameterType="String" resultType="Integer">
+       SELECT COUNT(*) as cnt FROM mvc_product_tbl 
+    </select>
+    
+ <!-- 상품 삭제처리 -->	
+  	<delete id="productDelete" parameterType="Integer">
+      DELETE FROM mvc_product_tbl where pdNo = #{pdNo}
+    </delete> 
+    
+ <!-- 상품 수정처리 -->	
+  	<update id="productUpdate" parameterType="spring.mvc.pj_mine.dto.ProductDTO">
+      UPDATE mvc_product_tbl
+	  SET pdName = #{pdName}, pdImg = #{pdImg}, category = #{category}, brand = #{brand}, content = #{content}, price = #{price}, quantity = #{quantity}, status = #{status}
+	  WHERE pdNo = #{pdNo} 
+    </update>  
+    
+  <!-- 상품 등록처리 -->	
+  	<insert id="productInsert" parameterType="spring.mvc.pj_mine.dto.ProductDTO">
+      INSERT INTO mvc_product_tbl(pdNo,pdName,pdImg,category, brand,content,price,quantity, status,indate)
+	  VALUES ((SELECT NVL(MAX(pdNo) + 1, 1) FROM mvc_product_tbl), #{pdName}, #{pdImg}, #{category},
+	  #{brand}, #{content},#{price},#{quantity},#{status}, sysdate)
+    </insert>
+      
+ <!-- 관리자 상품관리 끝 -->
+ 
+  <!-- 상품 갯수 -->	<!-- resultType = "Integer"일 경우 COUNT(*) -->
+  	<select id="productCnt" parameterType="String" resultType="Integer">
+       SELECT COUNT(*) as cnt FROM mvc_product_tbl where category = #{strCategoryCnt}
+    </select>
+   
+   <!-- 신상품 갯수 -->	<!-- resultType = "Integer"일 경우 COUNT(*) -->
+  	<select id="newProductCnt" resultType="Integer">
+       SELECT COUNT(*) as cnt FROM mvc_product_tbl
+    </select>  
+    
+  <!-- 상품 리스트 -->	
+  	<select id="productList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.ProductDTO">
+       <![CDATA[	
+       SELECT * 
+	   FROM ( 
+	   SELECT A.* , rownum as rn 
+	   FROM (
+	   SELECT pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate 
+	   FROM mvc_product_tbl 
+	   WHERE category = #{strCategory}
+	   ORDER BY pdNo DESC
+	   ) A 
+	   ) 
+	   WHERE rn >= #{start} AND rn <= #{end} 
+	   ]]>
+    </select>
+    
+    <!-- 신상품 리스트 -->	
+  	<select id="newProductList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.ProductDTO">
+       <![CDATA[	
+       SELECT * 
+	   FROM ( 
+	   SELECT A.* , rownum as rn 
+	   FROM (
+	   SELECT pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate 
+	   FROM mvc_product_tbl 
+	   ORDER BY pdNo DESC
+	   ) A 
+	   ) 
+	   WHERE rn >= #{start} AND rn <= #{end} 
+	   ]]>
+    </select>
+    
+    <!-- 상품 상세페이지 -->	
+  	<select id="getProductDetail" parameterType="Integer" resultType="spring.mvc.pj_mine.dto.ProductDTO">
+      SELECT * FROM mvc_product_tbl WHERE pdNo = #{pdNo}
+    </select> 
+    
+    <!-- 바로구매 -->
+    <insert id="nowBuy" parameterType="spring.mvc.pj_mine.dto.BasketDTO">
+      INSERT INTO mvc_order_tbl(orNo,pdNo,pdName,pdImg, id,brand,price,quantity)
+					VALUES ((SELECT NVL(MAX(orNo) + 1, 1) FROM mvc_order_tbl), #{pdNo}, #{pdName}, #{pdImg}, #{id}, #{brand},#{price},#{quantity})
+    </insert>
+    
+    <!-- [장바구니] -->
+    <!-- 장바구니 추가 -->
+    <insert id="basketInsert" parameterType="spring.mvc.pj_mine.dto.BasketDTO">
+      INSERT INTO mvc_basket_tbl(bkNo,pdNo,pdName,pdImg, id,brand,price,quantity)
+					VALUES ((SELECT NVL(MAX(bkNo) + 1, 1) FROM mvc_basket_tbl), #{pdNo}, #{pdName}, #{pdImg}, #{id}, #{brand},#{price},#{quantity})
+    </insert>
+    
+    <!-- 장바구니 목록 -->
+    <select id="basketList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.BasketDTO">
+       SELECT 
+	   bkNo, pdNo, pdName, pdImg, id, brand, price, quantity 
+	   FROM mvc_basket_tbl
+	   WHERE id = #{id}
+	   ORDER BY bkNo DESC
+    </select>
+    
+    <!-- 장바구니 삭제 -->
+    <delete id="baksetDelete" parameterType="Integer">
+      DELETE FROM mvc_basket_tbl where bkNo = #{bkNo}
+    </delete> 
+    
+    <!-- 장바구니 구매 처리1 -->
+    <!-- 장바구니 리스트 가져오기 -->
+    <select id="baksetGet1" parameterType="String" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+       SELECT 
+	   bkNo, pdNo, pdName, pdImg, id, brand, price, quantity 
+	   FROM mvc_basket_tbl
+	   WHERE bkNo = #{oldBkNo}
+	   ORDER BY bkNo DESC
+    </select>
+  	
+  	<!-- 장바구니 구매 처리2 -->
+  	<!-- 리스트 주문목록에 넣기 -->
+  	<insert id="baksetGet2" parameterType="spring.mvc.pj_mine.dto.BasketDTO">
+      INSERT INTO mvc_order_tbl(orNo,pdNo,pdName,pdImg, id,brand,price,quantity)
+					VALUES ((SELECT NVL(MAX(orNo) + 1, 1) FROM mvc_order_tbl), #{pdNo}, #{pdName}, #{pdImg}, #{id}, #{brand},#{price},#{quantity})
+    </insert>   
+    
+    <!-- 장바구니 회원주소 -->
+    <select id="basketAddress" parameterType="String" resultType="String">
+       SELECT address FROM mvc_customer_tbl WHERE id = #{id}
+    </select>
+   
+   <!-- 주문목록 -->
+   <select id="customerOrderList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE id = #{id}
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+   
+   <!-- 주문목록 갯수 -->
+   <select id="customerOrderCnt" parameterType="String" resultType="Integer">
+       SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE id = #{id}
+    </select>
+   
+   <!-- 주문목록 삭제  -->
+   <delete id="customerPreparedOrederDelete" parameterType="String">
+      DELETE FROM mvc_order_tbl WHERE orNo = #{orNo}
+    </delete> 
+   
+   <!-- 주문완료 환불하기-->
+    <update id="customerOrederRefund" parameterType="String">
+      UPDATE mvc_order_tbl SET orState = '환불요청' WHERE orNo = #{orNo}
+    </update> 
+    
+    
+    <!-- 상품 검색 -->
+    <!-- 검색 갯수 -->
+   <select id="searchCnt" parameterType="String" resultType="Integer">
+   	   <![CDATA[
+       SELECT COUNT(*) as cnt FROM mvc_product_tbl WHERE pdName LIKE '%'||#{content}||'%'
+       ]]>
+    </select>
+    
+    <!-- 검색 상품 리스트 -->
+    	<select id="search" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.ProductDTO">
+       <![CDATA[	
+       SELECT * 
+	   FROM ( 
+	   SELECT A.* , rownum as rn 
+	   FROM (
+	   SELECT pdNo, pdName, pdImg, category, brand, content, price, quantity, status, indate
+	   FROM mvc_product_tbl
+	   WHERE pdName LIKE '%'||#{content}||'%'
+	   ORDER BY indate DESC
+	   ) A 
+	   ) 
+	   WHERE rn BETWEEN #{start} AND #{end} 
+	   ]]>
+    </select>
+    
+    <!-- 관리자 주문관리 -->
+    <!-- 주문목록 -->
+     <select id="managerOrderList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE orState = '배송준비중'
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+    
+    <!-- 주문목록  상품 갯수 -->
+    <select id="managerOrderCnt" resultType="Integer">
+    <![CDATA[
+      SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE orState = '배송준비중'
+      ]]>
+    </select>
+    
+    <!-- 주문 취소 -->
+    <update id="managerOrderCancel" parameterType="String">
+      UPDATE mvc_order_tbl SET orState = '주문취소' WHERE orNo = #{orNo}
+    </update>
+    
+    <!-- 주문 승인 -->
+    <update id="managerOrederApproval1" parameterType="String">
+      UPDATE mvc_order_tbl SET orState = '배송완료' WHERE orNo = #{orNo}
+    </update>
+    
+    <!-- 주문승인 상품 재고 조정 -->
+    <update id="managerOrederApproval2" parameterType="String">
+   		UPDATE mvc_product_tbl SET quantity = quantity - (SELECT quantity
+		FROM mvc_order_tbl
+		WHERE orNo = #{orNo}  ) 
+		WHERE pdNo = (SELECT pdNo 
+		FROM mvc_order_tbl 
+		WHERE orNo = #{orNo}  ) 
+    </update>
+    
+    <!-- 주문승인 목록 int start ,int end -->
+    <select id="managerOrderApprovalList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE orState = '배송완료'
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+    
+    <!-- 주문 승인 목록 갯수 -->
+    <select id="managerOrderApprovalCnt" resultType="Integer">
+    <![CDATA[
+      SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE orState = '배송완료'
+      ]]>
+    </select>
+    
+    <!-- 환불 -->
+    <!-- 환불 요청 목록 -->
+     <select id="refundRequestList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE orState = '환불요청'
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+    
+    <!-- 환불 요청 갯수 -->
+    <select id="refundRequestCnt" resultType="Integer">
+    <![CDATA[
+      SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE orState = '환불요청'
+      ]]>
+    </select>
+    
+    <!-- 환불 취소 -->
+    <update id="refundCancel" parameterType="String">
+      UPDATE mvc_order_tbl SET orState = '환불취소' WHERE orNo = #{orNo}
+    </update>
+    
+    <!-- 환불 승인 -->
+    <!-- 상태변경 -->
+    <update id="refundApproval1" parameterType="String">
+      UPDATE mvc_order_tbl SET orState = '환불완료' WHERE orNo = #{orNo}
+    </update>
+    
+    <!-- 재고 조정 -->
+     <update id="refundApproval2" parameterType="String">
+   		UPDATE mvc_product_tbl SET quantity = quantity + (SELECT quantity
+		FROM mvc_order_tbl
+		WHERE orNo = #{orNo}  ) 
+		WHERE pdNo = (SELECT pdNo 
+		FROM mvc_order_tbl 
+		WHERE orNo = #{orNo}  ) 
+    </update>
+    
+     <!-- 환불승인 목록 int start ,int end -->
+    <select id="refundApprovalList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE orState = '환불완료'
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+    
+   <!--  환불 승인 목록 갯수 -->
+    <select id="refundApprovalCnt" resultType="Integer">
+    <![CDATA[
+      SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE orState = '환불완료'
+      ]]>
+    </select>
+    
+    <!-- 환불취소 목록 -->
+    <select id="refundCancelList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.OrderDTO">
+        <![CDATA[
+       SELECT  *
+	   FROM ( 
+	   SELECT A.* , rownum as rn
+	   FROM (
+	   SELECT orNo, pdNo, pdName, pdImg, id, brand, price, quantity, orState, orDate
+	   FROM mvc_order_tbl 
+	   WHERE orState = '환불취소'
+	   ORDER BY orNo DESC
+	   ) A 
+	   ) 
+	    WHERE rn BETWEEN #{start} AND #{end} 
+	     ]]>
+    </select>
+    
+   <!--  환불 취소 목록 갯수 -->
+    <select id="refundCancelCnt" resultType="Integer">
+    <![CDATA[
+      SELECT COUNT(*) as cnt FROM mvc_order_tbl WHERE orState = '환불취소'
+      ]]>
+    </select>
+    
+    <!-- 결산 -->
+    <select id="totalMoney" resultType="Integer">
+      SELECT * FROM total_view
+    </select>
+    
+  </mapper>

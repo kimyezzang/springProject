@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="spring.mvc.pj_mine.dao.BoardDAO">	<!-- namespace="패키지명.인터페이스" -->
+ 
+  <!-- 게시판 -->
+  <!-- 게시판 갯수 --> <!-- resultType = "Integer"일 경우 COUNT(*) -->
+  	<select id="boardCnt" resultType="Integer">
+       SELECT COUNT(*) as cnt FROM mvc_board_tbl
+    </select>
+   
+  <!-- 게시판 리스트 -->	
+  	<select id="boardList" parameterType="java.util.Map" resultType="spring.mvc.pj_mine.dto.BoardDTO">
+       <![CDATA[	
+       SELECT * 
+	   FROM ( 
+	   SELECT A.* , rownum as rn 
+	   FROM (
+	   SELECT num, title, content, writer, password, readCnt, regDate,
+	   (SELECT COUNT(*) FROM mvc_board_comment_tbl 
+	   WHERE board_num = b.num) comment_count
+	   FROM mvc_board_tbl b
+	   WHERE show in 'y'
+	   ORDER BY num DESC
+	   ) A 
+	   ) 
+	   WHERE rn >= #{start} AND rn <= #{end} 
+	   ]]>
+    </select>
+    
+    <!-- 게시글 작성 -->
+    <insert id="boardInsert" parameterType="spring.mvc.pj_mine.dto.BoardDTO">
+      INSERT INTO mvc_board_tbl(num,title,content,writer,password,readCnt,regDate) 
+	  VALUES ((SELECT NVL(MAX(num) + 1, 1) FROM mvc_board_tbl),#{title}, #{content}, #{writer}, #{password}, 0, sysdate)
+    </insert>
+    
+    <!-- 조회수 증가 -->
+    <update id="plusReadCnt" parameterType="Integer">
+     UPDATE mvc_board_tbl SET readCnt = (readCnt + 1)
+	 WHERE num = #{num}
+    </update>
+    
+    <!-- 게시글 상세페이지 -->
+    <select id="getBoardDetail" parameterType="Integer" resultType="spring.mvc.pj_mine.dto.BoardDTO">
+      SELECT * FROM mvc_board_tbl WHERE num=#{num}
+    </select>
+    
+    <!-- 비밀번호 인증 -->
+    <select id="password_chk" parameterType="java.util.Map" resultType="String">
+      SELECT * FROM mvc_board_tbl WHERE num = #{num}
+      AND password = #{password}
+    </select>
+    
+    <!-- 게시글 수정처리  -->
+    <update id="updateBoard" parameterType="spring.mvc.pj_mine.dto.BoardDTO">
+      UPDATE mvc_board_tbl
+      SET writer =#{writer} , title=#{title} , content = #{content}  , password = #{password}  
+	  WHERE num = #{num} 
+    </update>
+    
+    <!-- 게시글 삭제 -->
+     <update id="deleteBoard" parameterType="Integer">
+      UPDATE mvc_board_tbl
+      SET show = 'n' 
+      WHERE num = #{num}
+    </update>
+    
+    <!-- 댓글 추가 처리 -->
+    <insert id="getCommentInsert" parameterType="spring.mvc.pj_mine.dto.BoardCommentDTO">
+     INSERT INTO mvc_board_comment_tbl
+     (comment_num, board_num, writer, content, reg_date )
+     VALUES((SELECT NVL(MAX(comment_num) +1, 1) FROM mvc_board_comment_tbl),#{board_num},#{writer},#{content},sysdate)
+    </insert>
+    
+    <!-- 댓글목록 -->
+    <select id="getCommentList" parameterType="Integer" resultType="spring.mvc.pj_mine.dto.BoardCommentDTO">
+      SELECT * FROM mvc_board_comment_tbl WHERE board_num = #{board_num} ORDER BY comment_num
+    </select>
+    
+    <!-- 댓글 삭제 -->
+   <delete id="deleteComment" parameterType="java.util.Map">
+      DELETE FROM mvc_board_comment_tbl
+      WHERE board_num = #{board_num} AND comment_num = #{comment_num}
+    </delete>
+    
+    
+   
+    
+    
+  </mapper>
